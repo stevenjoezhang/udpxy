@@ -14,7 +14,6 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/time.h>
-#include <sys/time.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -154,7 +153,11 @@ main( int argc, char** argv )
 {
     const char* sources[READERS] = { "198.18.0.99", SOURCE_IP, SOURCE_IP };
     struct sockaddr_in group, source[READERS], local, control_addr;
+#ifdef UDPXY_MCAST_IFINDEX
+    struct mcast_iface interface;
+#else
     struct in_addr interface;
+#endif
     struct pollfd readers[READERS];
     int received[READERS] = { 0, 0, 0 };
     int control = -1, failed = 0, i, packet, phase;
@@ -169,7 +172,12 @@ main( int argc, char** argv )
     address( &group, GROUP_IP, 5500 );
     address( &local, RECEIVER_IP, 0 );
     address( &control_addr, SOURCE_IP, CONTROL_PORT );
+#ifdef UDPXY_MCAST_IFINDEX
+    memset( &interface, 0, sizeof(interface) );
+    interface.addr = local.sin_addr; /* index zero exercises the address path */
+#else
     interface = local.sin_addr;
+#endif
     control = socket( AF_INET, SOCK_DGRAM, 0 );
     if( control < 0 || bind( control, (struct sockaddr*)&local, sizeof(local) ) ) {
         perror("receiver control");
