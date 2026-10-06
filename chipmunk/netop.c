@@ -248,9 +248,11 @@ setup_mcast_listener( struct sockaddr_in*   s_address,
             break;
         }
 
-#ifdef SO_REUSEPORT
+#if defined(SO_REUSEPORT) && !defined(__linux__)
         /*  On some systems (such as FreeBSD) SO_REUSEADDR
             just isn't enough to subscribe to N same channels for different clients.
+            Linux only needs SO_REUSEADDR: reuseport early demultiplexing can
+            reselect a socket without respecting its multicast source filter.
         */
         rc = setsockopt( sockfd, SOL_SOCKET, SO_REUSEPORT,
                          &ON, sizeof(ON) );
