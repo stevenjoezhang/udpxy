@@ -211,6 +211,21 @@ setup_mcast_listener( struct sockaddr_in*   s_address,
             break;
         }
 
+#if defined(__linux__) && defined(IP_MULTICAST_ALL)
+        {
+            int mc_all = 0;
+
+            /* Do not queue another socket's subscriptions before our join. */
+            if (setsockopt(sockfd, IPPROTO_IP, IP_MULTICAST_ALL,
+                           &mc_all, sizeof(mc_all)) < 0 &&
+                errno != ENOPROTOOPT) {
+                mperror(g_flog, errno, "%s: setsockopt IP_MULTICAST_ALL",
+                        __func__);
+                break;
+            }
+        }
+#endif
+
         if (buflen != 0) {
             rc = get_rcvbuf( sockfd, &rcvbuf_len );
             if (0 != rc) break;
